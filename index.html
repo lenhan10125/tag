@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <link rel="icon" type="image/x-icon" href="ORC.ico">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ORICHIIN</title>
+
+    <style>
+        /* FONTS */
+        @font-face {
+            font-family: 'Lato';
+            src: url(https://img1.wsimg.com/gfonts/s/lato/v25/S6uyw4BMUTPHjx4wXg.woff2) format('woff2');
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Lato', sans-serif;
+            color: #FFFFFF !important;
+            background: url(https://r4.wallpaperflare.com/wallpaper/118/736/916/gawr-gura-hololive-blue-eyes-white-hair-hd-wallpaper-6631b6686024bc6e11599a9da016af34.jpg) no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+        }
+
+        :root {
+            --yt-bg: rgba(15, 15, 15, 0.85);
+            --yt-border: rgba(255, 255, 255, 0.1);
+        }
+
+        .yt-header {
+            position: fixed;
+            top: 0; width: 100%; height: 56px;
+            background: var(--yt-bg);
+            backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+
+        .icon-btn {
+            background: transparent; border: none; cursor: pointer;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.1); }
+        .icon-btn svg { width: 24px; height: 24px; fill: white; }
+
+        .header-center { flex: 0 1 720px; margin: 0 15px; }
+        .search-container {
+            display: flex; background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--yt-border); border-radius: 40px;
+            overflow: hidden; padding-left: 20px;
+        }
+        .search-input {
+            flex: 1; background: transparent; border: none;
+            color: white; outline: none; font-size: 14px; height: 40px;
+        }
+        .search-btn {
+            background: rgba(255,255,255,0.1); border: none;
+            width: 64px; height: 40px; border-left: 1px solid var(--yt-border);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px; background: #99CCFF;
+            border-radius: 50%; color: #000; display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+        }
+
+        /* --- SIDEBAR CẢI TIẾN --- */
+        .yt-sidebar {
+            position: fixed; left: 0; top: 56px; width: 240px; height: calc(100% - 56px);
+            background: var(--yt-bg); backdrop-filter: blur(10px);
+            padding: 12px; z-index: 999; box-sizing: border-box;
+            border-right: 1px solid var(--yt-border);
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .yt-sidebar.closed {
+            width: 72px;
+        }
+
+        .sidebar-item {
+            padding: 10px; border-radius: 10px; cursor: pointer;
+            font-size: 14px; transition: 0.2s; margin-bottom: 2px;
+            display: flex; align-items: center;
+            white-space: nowrap;
+            color: white;
+        }
+        .sidebar-item:hover, .sidebar-item.active { background: rgba(255,255,255,0.1); }
+        
+        .sidebar-item svg {
+            min-width: 24px; width: 24px; height: 24px; 
+            margin-right: 24px; fill: white;
+        }
+
+        .yt-sidebar.closed .item-text {
+            display: none;
+        }
+
+        /* --- LOADING SCREEN --- */
+        #loader-wrapper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c8b8f; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .loader-top-img { width: 360px; height: auto; margin-bottom: 20px; }
+        .neon-loading-container { width: 320px; margin: 10px 0; font-family: sans-serif; }
+        .neon-text-row { display: flex; justify-content: space-between; color: #00FF00; font-weight: bold; font-size: 18px; text-shadow: 0 0 10px #00FF00; margin-bottom: 8px; }
+        .neon-bar-border { width: 100%; height: 22px; border: 2px solid #00FF00; border-radius: 15px; padding: 2px; box-sizing: border-box; box-shadow: 0 0 5px #00FF00; }
+        .neon-bar-fill { height: 100%; width: 0%; background: #00FF00; border-radius: 10px; box-shadow: 0 0 15px #00FF00; }
+        .loader-hidden { opacity: 0; visibility: hidden; }
+
+        /* --- CONTAINER --- */
+        .container {
+            height: calc(100vh - 56px); 
+            margin-top: 56px;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: flex-start;
+            background: rgba(0, 0, 0, 0.2); opacity: 0; 
+            transition: opacity 1s ease-in, padding-left 0.3s ease;
+            padding-left: 240px; 
+            overflow-y: auto; /* Cho phép cuộn trang để xem video */
+        }
+        .container.full-width { padding-left: 72px !important; }
+        .container.show { opacity: 1; }
+        .content-box { width: 90%; max-width: 1200px; padding: 40px; border-radius: 25px; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin: 20px auto; }
+        h1 { color: #d9b8ab; margin-top: 0; font-size: 2.5em; text-shadow: 0 0.05em rgba(0,0,0,.8) !important; }
+        p { line-height: 1.6; font-size: 1.1em; text-shadow: 0 0.05em rgba(0,0,0,.8) !important; }
+        a { color: #99CCFF; text-decoration: none; font-weight: bold; transition: 0.3s; }
+        a:hover { color: #ffffff; text-decoration: underline; }
+
+        .sidebar-link {
+            text-decoration: none !important;
+            color: inherit !important;
+            display: block;
+        }
+
+        /* --- PHẦN TAG MỚI THÊM --- */
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .tag-item {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .tag-item:hover {
+            background: rgba(153, 204, 255, 0.2);
+            color: #99CCFF;
+            border-color: #99CCFF;
+            text-decoration: none;
+        }
+
+        /* --- TÍCH HỢP VIDEO GRID CSS --- */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 1400px;
+            box-sizing: border-box;
+        }
+
+        .video-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #333;
+            object-fit: cover;
+        }
+
+        .video-info {
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .video-text h3 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: white;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-text p {
+            margin: 0;
+            font-size: 12px;
+            color: #aaa;
+            text-shadow: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader-wrapper">
+        <img src="ORC.png" alt="Logo" class="loader-top-img">
+        <div class="neon-loading-container">
+            <div class="neon-text-row"><span>Loading..</span><span id="load-val">0%</span></div>
+            <div class="neon-bar-border"><div class="neon-bar-fill" id="load-fill"></div></div>
+        </div>
+        <p style="color: #99CCFF; margin-top: 20px; font-weight: bold;">ĐANG TẢI...</p>
+    </div>
+
+    <nav class="yt-header">
+        <div class="header-left">
+            <button class="icon-btn" id="menu-toggle">
+                <svg viewBox="0 0 24 24"><path d="M21 6H3V5h18v1zm0 5H3v1h18v-1zm0 6H3v1h18v-1z"></path></svg>
+            </button>
+            <div class="logo">
+                <a href="https://hentaiorc.xyz" style="text-decoration: none; display: flex; align-items: center;">
+                    <span style="color: #99CCFF; font-weight: bold; font-size: 1.8rem;">Hentaiorc.xyz</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div class="search-container">
+                <input type="text" placeholder="Tìm kiếm..." class="search-input">
+                <button class="search-btn">
+                    <svg viewBox="0 0 24 24"><path d="M20.87 20.17l-5.59-5.59C16.35 13.35 17 11.75 17 10c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.75 0 3.35-.65 4.58-1.71l5.59 5.59.7-.71zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button class="icon-btn" title="Cài đặt">
+                <svg viewBox="0 0 24 24"><path d="M12 9.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5m0-1c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zM13.22 3l.55 2.06.13.51.5.15c.53.15 1.03.38 1.5.67l.47.3.52-.11 2.06-.45 1.46 2.47-1.53 1.54-.4.4.08.54c.05.35.07.71.07 1.07s-.02.72-.07 1.07l-.08.54.4.4 1.53 1.54-1.46 2.47-2.06-.45-.52-.11-.47.3c-.47.29-.97.52-1.5.67l-.5.15-.13.51-.55 2.06h-2.44l-.55-2.06-.13-.51-.5-.15c-.53-.15-1.03-.38-1.5-.67l-.47-.3-.52.11-2.06.45-1.46-2.47 1.53-1.54.4-.4-.08-.54c-.05-.35-.07-.72-.07-1.07s.02-.72.07-1.07l.08-.54-.4-.4-1.53-1.54 1.46-2.47 2.06.45.52.11.47-.3c.47-.29.97-.52 1.5-.67l.5-.15.13-.51.55-2.06h2.44m.6-1h-3.64l-.74 2.78c-.64.19-1.23.49-1.77.88l-2.77-.61-1.82 3.15 2.06 2.08c-.05.33-.1.68-.1 1.03s.05.7.1 1.03l-2.06 2.08 1.82 3.15 2.77-.61c.54.39 1.13.69 1.77.88l.74 2.78h3.64l.74-2.78c.64-.19 1.23-.49 1.77-.88l2.77.61 1.82-3.15-2.06-2.08c.05-.33.1-.68.1-1.03s-.05-.7-.1-1.03l2.06-2.08-1.82-3.15-2.77.61c-.54-.39-1.13-.69-1.77-.88L13.82 2z"></path></svg>
+            </button>
+            <div class="user-avatar">O</div>
+        </div>
+    </nav>
+
+    <aside class="yt-sidebar" id="sidebar">
+        <a href="index.html" class="sidebar-link">
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+                <span class="item-text">Trang chủ</span>
+            </div>
+        </a>
+        
+        <a href="#" class="sidebar-link">
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"></path></svg>
+                <span class="item-text">không khả dụng</span>
+            </div>
+        </a>
+
+        <a href="#" class="sidebar-link">
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81L5.12 9.91l4.91-.42L12 5l1.97 4.49 4.91.42-3.77 3.28 1.12 4.81z"></path></svg>
+                <span class="item-text">không khả dụng</span>
+            </div>
+        </a>
+
+        <hr style="border: 0.5px solid rgba(255,255,255,0.1); width: 100%;">
+
+        <a href="#" class="sidebar-link">
+            <div class="sidebar-item">
+                <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"></path></svg>
+                <span class="item-text">Thư viện</span>
+            </div>
+        </a>
+
+        <a href="https://hentaiorc.xyz/tags" target="_blank" class="sidebar-link">
+            <div class="sidebar-item active">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"></path></svg>
+                <span class="item-text">#Các thẻ</span>
+            </div>
+        </a>
+    </aside>
+
+    <div class="container" id="main-content">
+        <div class="content-box">
+            <h1>ORICHIIN STUDIO</h1>
+            <p>Trang web đang trong quá trình phát triển</p>
+            <p>Dự án chính: <a href="https://hentaiorc.xyz">ORC-STUDIO</a></p>
+            
+            <div class="tag-container">
+                <a href="#" class="tag-item">3D</a>
+                <a href="#" class="tag-item">Action</a>
+                <a href="#" class="tag-item">Adventure</a>
+                <a href="#" class="tag-item">Comedy</a>
+                <a href="#" class="tag-item">Drama</a>
+                <a href="#" class="tag-item">Fantasy</a>
+                <a href="#" class="tag-item">Romance</a>
+                <a href="#" class="tag-item">School Life</a>
+            </div>
+        </div>
+
+        <div class="video-grid">
+            <div class="video-card">
+                <video class="thumbnail" muted loop onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;">
+                    <source src="link-video-preview-1.mp4" type="video/mp4">
+                </video>
+                <div class="video-info">
+                    <div class="user-avatar" style="width: 36px; height: 36px;">O</div>
+                    <div class="video-text">
+                        <h3>Demo sản phẩm 3D - Orichiin Studio v1.0</h3>
+                        <p>ORICHIIN STUDIO</p>
+                        <p>1.2K lượt xem • 2 ngày trước</p>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+    </div>
+
+    <script>
+        document.getElementById("menu-toggle").addEventListener("click", function() {
+            const sidebar = document.getElementById("sidebar");
+            const mainContent = document.getElementById("main-content");
+            sidebar.classList.toggle("closed");
+            mainContent.classList.toggle("full-width");
+        });
+
+        window.addEventListener("load", function() {
+            const loader = document.getElementById("loader-wrapper");
+            const content = document.getElementById("main-content");
+            const fill = document.getElementById("load-fill");
+            const val = document.getElementById("load-val");
+            const totalTime = 5000; 
+
+            let start = null;
+            function step(timestamp) {
+                if (!start) start = timestamp;
+                const progress = timestamp - start;
+                const percent = Math.min((progress / totalTime) * 100, 100);
+                fill.style.width = percent + "%";
+                val.innerText = Math.floor(percent) + "%";
+                if (progress < totalTime) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    setTimeout(() => {
+                        loader.classList.add("loader-hidden");
+                        content.classList.add("show");
+                    }, 200);
+                }
+            }
+            window.requestAnimationFrame(step);
+        });
+    </script>
+</body>
+</html>
